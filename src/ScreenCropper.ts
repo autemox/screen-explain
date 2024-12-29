@@ -40,12 +40,17 @@ export class ScreenCropper {
 
     private async showCropWindow(screenshotData: string): Promise<void> {
         const primaryDisplay = screen.getPrimaryDisplay();
-        const { width, height } = primaryDisplay.workAreaSize;
+        const { width, height } = primaryDisplay.bounds;  // Use bounds instead of workAreaSize
         
         this.captureWindow = new BrowserWindow({
             width: width,
             height: height,
+            x: 0,
+            y: 0,
+            autoHideMenuBar: true,  // Hide the menu bar
             fullscreen: true,
+            frame: false,
+            transparent: true,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false

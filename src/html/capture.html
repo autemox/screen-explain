@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>Select Area</title>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             cursor: none;  /* Hide default cursor */
         }
@@ -14,9 +16,11 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: contain;  /* This ensures the image displays properly */
+            width: 100%;
+            height: 100%;
+            object-fit: fill;  /* Changed from contain to fill */
+            margin: 0;
+            padding: 0;
         }
         #selection-overlay {
             position: absolute;
@@ -26,6 +30,8 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.3);
             display: none;
+            margin: 0;
+            padding: 0;
         }
         #selection-box {
             position: absolute;
@@ -39,8 +45,8 @@
             height: 8px;
             border: 2px solid #00ff00;
             background: rgba(0, 255, 0, 0.2);
-            pointer-events: none;  /* Ensure it doesn't interfere with clicks */
-            transform: translate(0%, 0%);  /* top left corner of box sits on cursor */
+            pointer-events: none;
+            transform: translate(0%, 0%);
             z-index: 1000;
         }
     </style>
@@ -79,7 +85,6 @@
             startX = e.clientX;
             startY = e.clientY;
             
-            // Hide cursor box while selecting
             cursorBox.style.display = 'none';
             
             selectionBox.style.left = startX + 'px';
@@ -107,33 +112,23 @@
         overlay.addEventListener('mouseup', (e) => {
             isSelecting = false;
             
-            // Get final selection coordinates
             const boxRect = selectionBox.getBoundingClientRect();
-            
-            // Create canvas for cropping
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Set canvas size to selection size
             canvas.width = boxRect.width;
             canvas.height = boxRect.height;
             
-            // Calculate the scaling factor between the displayed image and its natural size
-            const scaleX = screenshot.naturalWidth / screenshot.offsetWidth;
-            const scaleY = screenshot.naturalHeight / screenshot.offsetHeight;
+            // For exact 1:1 pixel mapping
+            const scaleX = screenshot.naturalWidth / window.innerWidth;
+            const scaleY = screenshot.naturalHeight / window.innerHeight;
             
-            // Calculate the position of the image within the viewport
-            const rect = screenshot.getBoundingClientRect();
-            const imageLeft = rect.left;
-            const imageTop = rect.top;
-            
-            // Adjust selection coordinates relative to the image
-            const selectionLeft = (boxRect.left - imageLeft) * scaleX;
-            const selectionTop = (boxRect.top - imageTop) * scaleY;
+            // Selection coordinates are now directly relative to window
+            const selectionLeft = boxRect.left * scaleX;
+            const selectionTop = boxRect.top * scaleY;
             const selectionWidth = boxRect.width * scaleX;
             const selectionHeight = boxRect.height * scaleY;
             
-            // Draw the selected portion of the screenshot
             ctx.drawImage(
                 screenshot,
                 selectionLeft,
@@ -146,10 +141,8 @@
                 canvas.height
             );
             
-            // Convert to data URL
             const croppedImageData = canvas.toDataURL('image/png');
             
-            // Send cropped image data to main process
             ipcRenderer.send('area-selected', {
                 imageData: croppedImageData,
                 bounds: {
@@ -161,7 +154,6 @@
             });
         });
 
-        // Show cursor box when selection is complete
         overlay.addEventListener('mouseup', () => {
             cursorBox.style.display = 'block';
         });
