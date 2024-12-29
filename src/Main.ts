@@ -19,6 +19,7 @@ export class Main {
     private openAiUtils: OpenAiUtils;
     private filePath: string;
     public apiKey: string;
+    public customPrompt: string; 
 
     constructor() {
         this.screenListener = new ScreenListener(this);
@@ -28,6 +29,7 @@ export class Main {
         this.explanationWindow = new ExplanationWindow(this);
         this.openAiUtils = new OpenAiUtils();
         this.apiKey='';
+        this.customPrompt='Tell me more about: ';// at this time, the functionality for user to change this doesnt exist
         
         this.filePath = path.join(app.getPath('userData'), 'data.txt');
 
@@ -90,7 +92,7 @@ export class Main {
           // Get explanation from OpenAI
           console.log("7. Starting OpenAI query...");
           const debugLog = { value: '' };
-          const query = `Please explain this text concisely: ${textToExplain}`;
+          const query = `${this.customPrompt}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it)`;
           
           try {
               console.log("8. Calling OpenAI...");

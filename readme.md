@@ -38,5 +38,12 @@ The application follows a modular architecture where each class handles a specif
    - **OpenAiUtils**: Processes text through GPT-4 for explanation
    - **ExplanationWindow**: Displays the AI-generated explanation
 
+## Future Ideas
+1. Streaming text to start getting response sooner
+2. Integrate better OCR with less artifacts
+3. Custom prompts
+4. Image recognition and discussion
+5. Close to icon in bottom right for windows users
+
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
