@@ -6,6 +6,11 @@ An Electron-based desktop application that captures screen content and explains 
 
 When triggered with CTRL+L (CMD+L on Mac), it allows users to select a portion of their screen, processes the text content using Tesseract OCR, and provides an AI-generated explanation using OpenAI's GPT-4.
 
+This can be useful for quickly looking up anything, especially if the text is in an unselectable window, such as error messages or frustrating websites.
+
+![Example of taking a screen snipplet by holding and dragging the mouse](./images/example01.jpg)
+![Example of an explanation of a snipplet](./images/example02.jpg)
+
 ## Features
 
 Cross-platform support (Windows & Mac)
