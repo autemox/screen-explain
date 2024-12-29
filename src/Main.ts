@@ -104,12 +104,12 @@ export class Main {
                   console.log("11. Explanation window opened");
               } else {
                   console.error("OpenAI returned no explanation");
-                  await this.processWindow.showProcessingWindow("Sorry, could not generate an explanation.");
+                  await this.processWindow.showProcessingWindow("Error from OpenAI: Did you use a valid API key?");
                   await this.openAiUtils.sleep(10000);
               }
           } catch (openAiError) {
               console.error("OpenAI Error:", openAiError);
-              await this.processWindow.showProcessingWindow("Error getting explanation from OpenAI");
+              await this.processWindow.showProcessingWindow("Error from OpenAI: Did you use a valid API key?");
               await this.openAiUtils.sleep(10000);
           }
 
