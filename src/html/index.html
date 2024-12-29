@@ -119,13 +119,15 @@
 
         // Load saved API key
         window.addEventListener('load', async () => {
-            const savedKey = await ipcRenderer.invoke('get-api-key');
-            if (savedKey) {
-                apiKeyInput.value = savedKey;
-                updateStatus(true);
-            } else {
-                updateStatus(false);
-            }
+            // Listen for the load-api-key event to populate the API key
+            ipcRenderer.on('load-api-key', (event, savedKey) => {
+                if (savedKey) {
+                    apiKeyInput.value = savedKey;
+                    updateStatus(true);
+                } else {
+                    updateStatus(false);
+                }
+            });
         });
 
         // Save API key when changed

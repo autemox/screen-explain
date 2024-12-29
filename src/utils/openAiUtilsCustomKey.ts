@@ -1,5 +1,5 @@
-import { openAI } from "./openAI";
 import dotenv from "dotenv";
+import { OpenAI } from "openai";
 
 dotenv.config();
 
@@ -52,7 +52,7 @@ export class OpenAiUtils {
         return nonEmptyTokens.length;
     }
 
-    async shortenMessages(messages: Message[], debugQueryLog: {value: string}): Promise<Message[]> {
+    async shortenMessages(messages: Message[], debugQueryLog: {value: string}, apiKey: string): Promise<Message[]> {
         
         const totalContentLength = messages.reduce((sum, item) => sum + item.content.length, 0);
         let firstArray: Message[] = [];
@@ -73,7 +73,8 @@ export class OpenAiUtils {
         let shortStr = await this.simpleQuery(
             "Shorten this conversation preserving only key details (names, actions, emotions), but keep it in conversation format: " + str,
             model,
-            debugQueryLog
+            debugQueryLog,
+            apiKey
         );
         if(!shortStr) 
             {
@@ -89,7 +90,7 @@ export class OpenAiUtils {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async simpleQuery(query: string, model: string, debugLog: {value: string}): Promise<string | null> {
+    async simpleQuery(query: string, model: string, debugLog: {value: string}, apiKey: string): Promise<string | null> {
 
         debugLog.value += `\n\n==> ==> ==> ==> ==> ==> ==> ==> ==> ==> OUT:`;
         debugLog.value += `\n[OpenAiUtils simpleQuery] Query: ${query}`;
@@ -97,7 +98,7 @@ export class OpenAiUtils {
         const result = await this.queryMessages([
             { "role": "system", "content": "You are a helpful assistant." },
             { "role": "user", "content": query }
-        ], model);
+        ], model, apiKey);
 
         debugLog.value += `\n\n==> ==> ==> ==> ==> ==> ==> ==> ==> ==> IN:`;
         debugLog.value += `\n[OpenAiUtils simpleQuery] Result: ${result}`;
@@ -105,8 +106,10 @@ export class OpenAiUtils {
         return result;
     }
   
-    async queryMessages(messages: Message[], model: string): Promise<string | null> {
+    async queryMessages(messages: Message[], model: string, apiKey: string): Promise<string | null> {
         model = (model === '3' || model === "3") ? "gpt-3.5-turbo-16k" : (model === '4' || model === "4") ? "gpt-4-0613" : model;
+        
+        let openAI = new OpenAI({ apiKey: apiKey });
         const response = await openAI.chat.completions.create({
             model: model,
             messages: messages as any

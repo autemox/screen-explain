@@ -13,7 +13,7 @@ Cross-platform support (Windows & Mac)
 ### Building the Application
 
 From your cmd.exe prompt, in the project folder, type:
-npm run               # Runs the application from cmd prompt
+npm start             # Runs the application from cmd prompt
 npm run package       # Creates executables for current platform
 
 ## Application Architecture

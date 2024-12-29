@@ -1,11 +1,13 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import AreaSelector from './AreaSelector';
 import ProcessWindow from './ProcessWindow';
 import OCRProcessor from './OCRProcessor';
 import { ScreenListener } from './ScreenListener';
 import { ScreenCropper } from './ScreenCropper';
-import { OpenAiUtils } from './utils/openAiUtils';
+import { OpenAiUtils } from './utils/openAiUtilsCustomKey';
 import ExplanationWindow from './ExplanationWindow';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 
 export class Main {
     public mainWindow: BrowserWindow | null = null;
@@ -15,7 +17,8 @@ export class Main {
     public processWindow: ProcessWindow;
     public explanationWindow: ExplanationWindow;
     private openAiUtils: OpenAiUtils;
-    private apiKey: string | null = null;
+    private filePath: string;
+    public apiKey: string;
 
     constructor() {
         this.screenListener = new ScreenListener(this);
@@ -24,9 +27,39 @@ export class Main {
         this.processWindow = new ProcessWindow(this);
         this.explanationWindow = new ExplanationWindow(this);
         this.openAiUtils = new OpenAiUtils();
+        this.apiKey='';
+        
+        this.filePath = path.join(app.getPath('userData'), 'data.txt');
+
         this.initializeApp();
     }
 
+    async saveString(data: string): Promise<void> {
+      try {
+        // Remove spaces and double quotes from the input string
+        const cleanedData = data.replace(/[" ]/g, '');
+        await fs.writeFile(this.filePath, cleanedData, 'utf8');
+        console.log('String saved successfully:', cleanedData);
+      } catch (err) {
+        console.error('Error saving string:', err);
+      }
+    }
+
+    async loadString(): Promise<string> {
+      try {
+        const data = await fs.readFile(this.filePath, 'utf8');
+        console.log('Loaded string:', data);
+        return data;
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+          console.log('Data file not found. No data to load.');
+        } else {
+          console.error('Error loading string:', err);
+        }
+        return '';
+      }
+    }
+    
     private async awaitSequence() {
       try {
           console.log("1. Starting sequence...");
@@ -34,6 +67,9 @@ export class Main {
           // await CTRL+L and get full screenshot
           const screenshotData = await this.screenListener.initializeListener();
           console.log("2. Got screenshot data");
+
+          // try to close any existing explanation windows
+          this.explanationWindow.cleanup();
 
           // Get cropped image from screenshot
           const croppedImage = await this.screenCropper.initializeScreenCapture(screenshotData);
@@ -58,7 +94,7 @@ export class Main {
           
           try {
               console.log("8. Calling OpenAI...");
-              const explanation = await this.openAiUtils.simpleQuery(query, 'gpt-4-0613', debugLog);
+              const explanation = await this.openAiUtils.simpleQuery(query, 'gpt-4-0613', debugLog, this.apiKey);
               console.log("9. Got OpenAI response:", explanation);
               
               // Show explanation window
@@ -94,16 +130,21 @@ export class Main {
           this.awaitSequence();  // Restart even on error
       }
   }
-    private initializeApp(): void {
-        app.whenReady().then(() => {
-            this.createMainWindow();
+    private async initializeApp(): Promise<void> {
+        app.whenReady().then(async () => {
+
+            this.apiKey=await this.loadString();
+            console.log('Loaded API key:', this.apiKey);
+
+            ipcMain.on('update-api-key', (event, key) => {
+              console.log(`Received API key: ${key}`);
+              this.saveString(key);
+            });
+            
             this.awaitSequence();
 
-            app.on('activate', () => {
-                if (BrowserWindow.getAllWindows().length === 0) {
-                    this.createMainWindow();
-                }
-            });
+            console.log('Creating main window with API key:', this.apiKey);
+            this.createMainWindow(this.apiKey);
         });
 
         app.on('window-all-closed', () => {
@@ -119,7 +160,7 @@ export class Main {
         });
     }
 
-    private createMainWindow(): void {
+    private createMainWindow(apiKey:string): void {
         this.mainWindow = new BrowserWindow({
             width: 800,
             height: 600,
@@ -130,7 +171,12 @@ export class Main {
             }
         });
 
-        this.mainWindow.loadFile('src/html/index.html');
+        this.mainWindow.loadFile('src/html/index.html').then(() => {
+          // Load the saved API key and send it to the renderer process
+          if (apiKey) {
+              this.mainWindow?.webContents.send('load-api-key', apiKey);
+          }
+      });
     }
 }
 
