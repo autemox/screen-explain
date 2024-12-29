@@ -15,8 +15,8 @@ export class AreaSelector {
   // Called by ScreenCapture when screenshot is ready
   public initializeSelection(screenshotDataUrl: string): void {
     // We'll use the existing captureWindow from ScreenCapture
-    if (this.main.screenCapture.captureWindow) {
-      this.main.screenCapture.captureWindow.webContents.send('init-area-select', {
+    if (this.main.screenCropper.captureWindow) {
+      this.main.screenCropper.captureWindow.webContents.send('init-area-select', {
         screenshot: screenshotDataUrl
       });
     }
