@@ -15,6 +15,7 @@ export class Main {
     public processWindow: ProcessWindow;
     public explanationWindow: ExplanationWindow;
     private openAiUtils: OpenAiUtils;
+    private apiKey: string | null = null;
 
     constructor() {
         this.screenListener = new ScreenListener(this);
@@ -26,12 +27,6 @@ export class Main {
         this.initializeApp();
     }
 
-    private async getExplanation(text: string): Promise<string> {
-        const debugLog = { value: '' };
-        const query = `Please explain this text concisely: ${text}`;
-        const explanation = await this.openAiUtils.simpleQuery(query, 'gpt-4-0613', debugLog);
-        return explanation || 'Unable to generate explanation';
-    }
     private async awaitSequence() {
       try {
           console.log("1. Starting sequence...");

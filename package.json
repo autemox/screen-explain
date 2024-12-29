@@ -2,20 +2,52 @@
   "name": "screen-explain",
   "version": "1.0.0",
   "description": "Desktop app for OCR and text analysis",
-  "main": "dist/main.js",
+  "main": "dist/Main.js",
   "scripts": {
     "start": "tsc && electron .",
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "package-win": "npm run build && electron-builder build --win",
+    "package-mac": "npm run build && electron-builder build --mac",
+    "package": "npm run build && electron-builder build"
+  },
+  "build": {
+    "appId": "com.screenexplain.app",
+    "productName": "Screen Explain",
+    "files": [
+      "dist/**/*",
+      "src/html/**/*",
+      "package.json",
+      ".env"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/icon.icns"
+    }
   },
   "dependencies": {
     "dotenv": "^16.4.7",
-    "electron": "^28.0.0",
+    "electron-store": "^10.0.0",
     "openai": "^4.77.0",
     "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
+    "@types/electron-store": "^3.2.2",
     "@types/node": "^20.0.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "typescript": "^5.0.0"
   }
 }

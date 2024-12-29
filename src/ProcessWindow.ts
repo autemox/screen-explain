@@ -28,6 +28,7 @@ export class ProcessWindow {
         this.currentWindow = new BrowserWindow({
             width: 300,
             height: 150,
+            autoHideMenuBar: true,  // Hide the menu bar
             x: screenWidth - 320,  // 20px margin from right
             y: screenHeight - 170, // 20px margin from bottom
             frame: false,          // No window frame
