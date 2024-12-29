@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Select Area</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: none;  /* Hide default cursor */
+        }
+        #screenshot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;  /* This ensures the image displays properly */
+        }
+        #selection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+        #selection-box {
+            position: absolute;
+            border: 2px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            display: none;
+        }
+        #cursor-box {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border: 2px solid #00ff00;
+            background: rgba(0, 255, 0, 0.2);
+            pointer-events: none;  /* Ensure it doesn't interfere with clicks */
+            transform: translate(0%, 0%);  /* top left corner of box sits on cursor */
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <img id="screenshot" />
+    <div id="selection-overlay">
+        <div id="selection-box"></div>
+    </div>
+    <div id="cursor-box"></div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let isSelecting = false;
+        let startX = 0;
+        let startY = 0;
+        
+        const screenshot = document.getElementById('screenshot');
+        const overlay = document.getElementById('selection-overlay');
+        const selectionBox = document.getElementById('selection-box');
+        const cursorBox = document.getElementById('cursor-box');
+        
+        // Update cursor box position
+        document.addEventListener('mousemove', (e) => {
+            cursorBox.style.left = e.clientX + 'px';
+            cursorBox.style.top = e.clientY + 'px';
+        });
+
+        ipcRenderer.on('screenshot-taken', (event, data) => {
+            screenshot.src = data.thumbnail;
+            overlay.style.display = 'block';
+        });
+
+        overlay.addEventListener('mousedown', (e) => {
+            isSelecting = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Hide cursor box while selecting
+            cursorBox.style.display = 'none';
+            
+            selectionBox.style.left = startX + 'px';
+            selectionBox.style.top = startY + 'px';
+            selectionBox.style.width = '0';
+            selectionBox.style.height = '0';
+            selectionBox.style.display = 'block';
+        });
+
+        overlay.addEventListener('mousemove', (e) => {
+            if (!isSelecting) return;
+
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            
+            const width = currentX - startX;
+            const height = currentY - startY;
+            
+            selectionBox.style.width = Math.abs(width) + 'px';
+            selectionBox.style.height = Math.abs(height) + 'px';
+            selectionBox.style.left = width > 0 ? startX + 'px' : currentX + 'px';
+            selectionBox.style.top = height > 0 ? startY + 'px' : currentY + 'px';
+        });
+
+        overlay.addEventListener('mouseup', (e) => {
+            isSelecting = false;
+            
+            // Get final selection coordinates
+            const boxRect = selectionBox.getBoundingClientRect();
+            
+            // Create canvas for cropping
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size to selection size
+            canvas.width = boxRect.width;
+            canvas.height = boxRect.height;
+            
+            // Calculate the scaling factor between the displayed image and its natural size
+            const scaleX = screenshot.naturalWidth / screenshot.offsetWidth;
+            const scaleY = screenshot.naturalHeight / screenshot.offsetHeight;
+            
+            // Calculate the position of the image within the viewport
+            const rect = screenshot.getBoundingClientRect();
+            const imageLeft = rect.left;
+            const imageTop = rect.top;
+            
+            // Adjust selection coordinates relative to the image
+            const selectionLeft = (boxRect.left - imageLeft) * scaleX;
+            const selectionTop = (boxRect.top - imageTop) * scaleY;
+            const selectionWidth = boxRect.width * scaleX;
+            const selectionHeight = boxRect.height * scaleY;
+            
+            // Draw the selected portion of the screenshot
+            ctx.drawImage(
+                screenshot,
+                selectionLeft,
+                selectionTop,
+                selectionWidth,
+                selectionHeight,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            
+            // Convert to data URL
+            const croppedImageData = canvas.toDataURL('image/png');
+            
+            // Send cropped image data to main process
+            ipcRenderer.send('area-selected', {
+                imageData: croppedImageData,
+                bounds: {
+                    x: selectionLeft,
+                    y: selectionTop,
+                    width: selectionWidth,
+                    height: selectionHeight
+                }
+            });
+        });
+
+        // Show cursor box when selection is complete
+        overlay.addEventListener('mouseup', () => {
+            cursorBox.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

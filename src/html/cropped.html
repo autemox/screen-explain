@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cropped Image</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        #cropped-image {
+            max-width: 100%;
+            max-height: 80vh;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .container {
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Processing Image...</h2>
+        <img id="cropped-image" />
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        ipcRenderer.on('cropped-image', (event, data) => {
+            document.getElementById('cropped-image').src = data.imageData;
+        });
+    </script>
+</body>
+</html>
