@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Tray, Menu } from 'electron';
 import AreaSelector from './AreaSelector';
 import ProcessWindow from './ProcessWindow';
 import OCRProcessorLocal from './OCRProcessorLocal';
@@ -23,6 +23,8 @@ export class Main {
     private filePath: string;
     public openAiApiKey: string;
     public googleEmail: string;
+    private tray: Tray | null = null;
+    private isQuitting: boolean = false;
 
     constructor() {
       this.googleEmail='autemox@gmail.com';
@@ -153,6 +155,7 @@ export class Main {
 
             console.log('Creating main window with API key:', this.openAiApiKey);
             this.createMainWindow(this.openAiApiKey);
+            this.createTray();
         });
 
         app.on('window-all-closed', () => {
@@ -163,8 +166,11 @@ export class Main {
 
         // Cleanup when app is quitting
         app.on('will-quit', () => {
-            this.screenCropper.cleanup();
-            this.explanationWindow.cleanup();
+          this.screenCropper.cleanup();
+          this.explanationWindow.cleanup();
+          if (this.tray) {
+              this.tray.destroy();
+          }
         });
     }
 
@@ -185,7 +191,42 @@ export class Main {
               this.mainWindow?.webContents.send('load-api-key', apiKey);
           }
       });
+
+      this.mainWindow.on('close', (event) => {
+        if (!this.isQuitting) {
+            event.preventDefault();
+            this.mainWindow?.hide();
+            return false;
+        }
+        return true;
+      });
     }
+
+    private createTray(): void {
+      this.tray = new Tray('src/assets/icon.png'); // You'll need an icon file
+      const contextMenu = Menu.buildFromTemplate([
+          { 
+              label: 'Show App', 
+              click: () => {
+                  this.mainWindow?.show();
+              }
+          },
+          { 
+              label: 'Quit', 
+              click: () => {
+                  this.isQuitting = true;
+                  app.quit();
+              }
+          }
+      ]);
+      
+      this.tray.setToolTip('Screen Explain');
+      this.tray.setContextMenu(contextMenu);
+      
+      this.tray.on('click', () => {
+          this.mainWindow?.show();
+      });
+  }
 }
 
 // Start the application
