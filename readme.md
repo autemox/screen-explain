@@ -34,16 +34,13 @@ The application follows a modular architecture where each class handles a specif
    - **ScreenListener**: Waits for CTRL+L/CMD+L hotkey and captures initial screenshot
    - **ScreenCropper**: Displays selection interface and handles area cropping
    - **ProcessWindow**: Shows status updates during processing
-   - **OCRProcessor**: Extracts text from the cropped image using Tesseract
-   - **OpenAiUtils**: Processes text through GPT-4 for explanation
+   - **OCRProcessorGoogle**: Extracts text from the cropped image using Google
+   - **OCRProcessorLocal**: Extracts text from the cropped image using Tesseract if no Google credentials are supplied
+   - **OpenAiSimpleStream**: Processes text through GPT-4 for explanation
    - **ExplanationWindow**: Displays the AI-generated explanation
 
 ## Future Ideas
-1. Streaming text to start getting response sooner
-2. Integrate better OCR with less artifacts
-3. Custom prompts
-4. Image recognition and discussion
-5. Close to icon in bottom right for windows users
+1. Image recognition and discussion
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.

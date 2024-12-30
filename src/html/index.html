@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <title>Screen Explain</title>
     <style>
-        body::-webkit-scrollbar {
-            display: none;
-        }
         body {
             -ms-overflow-style: none; /* IE and Edge */
             scrollbar-width: none; /* Firefox */
@@ -80,6 +77,21 @@
             font-weight: bold;
             text-align: center;
         }
+        .config-link {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+            cursor: pointer;
+        }
+        .config-link:hover {
+            background-color: #e8f4ff;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -108,6 +120,13 @@
                 <li>Click "Create new secret key"</li>
                 <li>Copy the key and paste it above</li>
             </ol>
+
+            <p><strong>Advanced Configurations:</strong><br>
+            The <b>config.json</b> file allows advanced customization of Screen Explain.  <strong>Custom Prompt</strong>: Modify the default prompt used for OpenAI explanations.  <strong>Google Vision API Key</strong>: Configure advanced OCR processing using Google Vision.  Restart the app after you make your changes.
+                
+            <div class="config-link" id="editConfig">
+                Edit Config File
+            </div>
         </div>
     </div>
 
@@ -115,11 +134,11 @@
         const { ipcRenderer } = require('electron');
         const apiKeyInput = document.getElementById('apiKey');
         const keyStatus = document.getElementById('keyStatus');
+        const editConfigLink = document.getElementById('editConfig');
         let saveTimeout;
 
         // Load saved API key
         window.addEventListener('load', async () => {
-            // Listen for the load-api-key event to populate the API key
             ipcRenderer.on('load-api-key', (event, savedKey) => {
                 if (savedKey) {
                     apiKeyInput.value = savedKey;
@@ -149,6 +168,11 @@
                 keyStatus.className = 'key-status status-empty';
             }
         }
+
+        // Open config file when the link is clicked
+        editConfigLink.addEventListener('click', () => {
+            ipcRenderer.send('open-config-file');
+        });
     </script>
 </body>
 </html>

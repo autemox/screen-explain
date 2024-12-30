@@ -39,6 +39,13 @@
         ipcRenderer.on('update-explanation', (event, explanation) => {
             document.getElementById('explanation-text').textContent = explanation;
         });
+        
+        // Add event listener for ESC key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                ipcRenderer.send('close-explanation-window');
+            }
+        });
     </script>
 </body>
 </html>

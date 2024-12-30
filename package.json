@@ -35,12 +35,13 @@
         "dmg"
       ],
       "icon": "assets/icon.icns"
-    }, 
+    },
     "portable": {
       "artifactName": "${productName}-portable.${ext}"
     }
   },
   "dependencies": {
+    "@google-cloud/vision": "^4.3.2",
     "dotenv": "^16.4.7",
     "electron-store": "^10.0.0",
     "openai": "^4.77.0",

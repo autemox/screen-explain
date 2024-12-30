@@ -14,6 +14,8 @@ export class ProcessWindow {
     }
 
     public async showProcessingWindow(message: string): Promise<void> {
+
+        console.log('showing processing window with message:', message);
         // Close any existing window first
         if (this.currentWindow) {
             this.currentWindow.close();

@@ -1,35 +1,39 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import AreaSelector from './AreaSelector';
 import ProcessWindow from './ProcessWindow';
-import OCRProcessor from './OCRProcessor';
+import OCRProcessorLocal from './OCRProcessorLocal';
+import OCRProcessorGoogle from './OCRProcessorGoogle';
 import { ScreenListener } from './ScreenListener';
 import { ScreenCropper } from './ScreenCropper';
 import { OpenAiUtils } from './utils/openAiUtilsCustomKey';
 import ExplanationWindow from './ExplanationWindow';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import * as fs2 from 'fs';
 
 export class Main {
     public mainWindow: BrowserWindow | null = null;
     public screenListener: ScreenListener;
     public screenCropper: ScreenCropper;
-    public ocrProcessor: OCRProcessor;
+    public ocrProcessorLocal: OCRProcessorLocal;
+    public ocrProcessorGoogle: OCRProcessorGoogle;
     public processWindow: ProcessWindow;
     public explanationWindow: ExplanationWindow;
     private openAiUtils: OpenAiUtils;
     private filePath: string;
-    public apiKey: string;
-    public customPrompt: string; 
+    public openAiApiKey: string;
+    public googleEmail: string;
 
     constructor() {
+      this.googleEmail='autemox@gmail.com';
+      this.openAiApiKey='';
         this.screenListener = new ScreenListener(this);
         this.screenCropper = new ScreenCropper(this);
-        this.ocrProcessor = new OCRProcessor(this);
+        this.ocrProcessorLocal = new OCRProcessorLocal(this);
+        this.ocrProcessorGoogle = new OCRProcessorGoogle(this);
         this.processWindow = new ProcessWindow(this);
         this.explanationWindow = new ExplanationWindow(this);
         this.openAiUtils = new OpenAiUtils();
-        this.apiKey='';
-        this.customPrompt='Tell me more about: ';// at this time, the functionality for user to change this doesnt exist
         
         this.filePath = path.join(app.getPath('userData'), 'data.txt');
 
@@ -77,43 +81,34 @@ export class Main {
           const croppedImage = await this.screenCropper.initializeScreenCapture(screenshotData);
           console.log("3. Got cropped image");
           
-          // Show OCR processing status
-          await this.processWindow.showProcessingWindow("Processing Image...");
-          console.log("4. Showed processing window");
-          
           // Process with OCR
-          const textToExplain = await this.ocrProcessor.initializeOCRProcessor(croppedImage);
+          let textToExplain = '';
+          await this.processWindow.showProcessingWindow("Processing Image with Google...");
+          textToExplain = await this.ocrProcessorGoogle.initializeOCRProcessor(croppedImage);
+          
+          if(textToExplain == '') {
+            await this.processWindow.showProcessingWindow("Processing Image Locally... (no valid Google API key)");
+            textToExplain = await this.ocrProcessorLocal.initializeOCRProcessor(croppedImage);
+          }
           console.log("5. Got OCR text:", textToExplain);
           
           // Show OCR result status
           await this.processWindow.showProcessingWindow("Processing Text: " + textToExplain.substring(0, 50) + "...");
           console.log("6. Updated processing window with OCR text");
           
-          // Get explanation from OpenAI
-          console.log("7. Starting OpenAI query...");
-          const debugLog = { value: '' };
-          const query = `${this.customPrompt}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it)`;
-          
-          try {
-              console.log("8. Calling OpenAI...");
-              const explanation = await this.openAiUtils.simpleQuery(query, 'gpt-4-0613', debugLog, this.apiKey);
-              console.log("9. Got OpenAI response:", explanation);
-              
-              // Show explanation window
-              if(explanation) {
-                  console.log("10. Opening explanation window...");
-                  await this.explanationWindow.showExplanation(explanation);
-                  console.log("11. Explanation window opened");
-              } else {
-                  console.error("OpenAI returned no explanation");
-                  await this.processWindow.showProcessingWindow("Error from OpenAI: Did you use a valid API key?");
-                  await this.openAiUtils.sleep(10000);
-              }
-          } catch (openAiError) {
-              console.error("OpenAI Error:", openAiError);
-              await this.processWindow.showProcessingWindow("Error from OpenAI: Did you use a valid API key?");
-              await this.openAiUtils.sleep(10000);
+          // get prompt
+          const configPath = path.join(app.getPath('userData'), 'config.json');
+          let config = null;
+          if (fs2.existsSync(configPath)) {
+            const configData = fs2.readFileSync(configPath, 'utf-8');
+            config = JSON.parse(configData);
           }
+          const customPrompt = config && config.customPrompt && config.customPrompt != '' ? config.customPrompt : 'Tell me about: ';
+
+          // Get explanation from OpenAI
+          console.log("7. Starting OpenAI query with prompt: ", customPrompt);
+          const query = `${customPrompt}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it)`;
+          await this.explanationWindow.intializeExplanationWindow(this.openAiApiKey, query);
 
           // Cleanup
           console.log("12. Starting cleanup...");
@@ -135,18 +130,29 @@ export class Main {
     private async initializeApp(): Promise<void> {
         app.whenReady().then(async () => {
 
-            this.apiKey=await this.loadString();
-            console.log('Loaded API key:', this.apiKey);
+            this.openAiApiKey=await this.loadString();
+            console.log('Loaded API key:', this.openAiApiKey);
 
             ipcMain.on('update-api-key', (event, key) => {
               console.log(`Received API key: ${key}`);
               this.saveString(key);
             });
+
+            ipcMain.on('open-config-file', () => {
+              const configPath = path.join(app.getPath('userData'), 'config.json');
+              shell.openPath(configPath) // Opens the file in the default text editor
+                  .then(() => {
+                      console.log('Config file opened:', configPath);
+                  })
+                  .catch((err) => {
+                      console.error('Failed to open config file:', err);
+                  });
+          });
             
             this.awaitSequence();
 
-            console.log('Creating main window with API key:', this.apiKey);
-            this.createMainWindow(this.apiKey);
+            console.log('Creating main window with API key:', this.openAiApiKey);
+            this.createMainWindow(this.openAiApiKey);
         });
 
         app.on('window-all-closed', () => {

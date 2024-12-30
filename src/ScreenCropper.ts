@@ -1,11 +1,8 @@
-
-//-----
-// This class handles the cropping functionality after screenshot is taken
-//-----
-
 import { BrowserWindow, ipcMain, screen } from 'electron';
 import { Main } from './Main';
 import { CapturedImage } from './ScreenListener';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export class ScreenCropper {
     main: Main;
@@ -19,6 +16,11 @@ export class ScreenCropper {
 
     private setupIpcListeners(): void {
         ipcMain.on('area-selected', (event, data: CapturedImage) => {
+            // Ensure the image data is properly formatted
+            if (!data.imageData.startsWith('data:image/png;base64,')) {
+                data.imageData = `data:image/png;base64,${data.imageData}`;
+            }
+            
             if (this.captureWindow) {
                 this.captureWindow.close();
                 this.captureWindow = null;
@@ -40,14 +42,14 @@ export class ScreenCropper {
 
     private async showCropWindow(screenshotData: string): Promise<void> {
         const primaryDisplay = screen.getPrimaryDisplay();
-        const { width, height } = primaryDisplay.bounds;  // Use bounds instead of workAreaSize
+        const { width, height } = primaryDisplay.bounds;
         
         this.captureWindow = new BrowserWindow({
             width: width,
             height: height,
             x: 0,
             y: 0,
-            autoHideMenuBar: true,  // Hide the menu bar
+            autoHideMenuBar: true,
             fullscreen: true,
             frame: false,
             transparent: true,
@@ -61,6 +63,11 @@ export class ScreenCropper {
 
         this.captureWindow.webContents.on('did-finish-load', () => {
             if (this.captureWindow) {
+                // Ensure screenshot data is properly formatted
+                if (!screenshotData.startsWith('data:image/png;base64,')) {
+                    screenshotData = `data:image/png;base64,${screenshotData}`;
+                }
+                
                 this.captureWindow.webContents.send('screenshot-taken', {
                     thumbnail: screenshotData
                 });
