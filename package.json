@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "description": "Desktop app for OCR and text analysis",
   "main": "dist/Main.js",
+  "author": "Your Name <your.email@example.com>",
   "scripts": {
     "start": "tsc && electron .",
     "build": "tsc",
     "watch": "tsc -w",
-    "package-win": "npm run build && electron-builder build --win",
+    "package-win-msi": "npm run build && electron-builder build --win --config.win.target=msi",
+    "package-win-portable": "npm run build && electron-builder build --win --config.win.target=portable",
+    "package-win-nsis": "npm run build && electron-builder build --win --config.win.target=nsis",
+    "package-win-all": "npm run build && electron-builder build --win",
     "package-mac": "npm run build && electron-builder build --mac",
     "package": "npm run build && electron-builder build"
   },
@@ -17,8 +21,7 @@
     "files": [
       "dist/**/*",
       "src/html/**/*",
-      "package.json",
-      ".env"
+      "package.json"
     ],
     "directories": {
       "output": "release"
@@ -26,18 +29,18 @@
     "win": {
       "target": [
         "portable",
-        "nsis"
+        "nsis",
+        "msi"
       ],
-      "icon": "assets/icon.ico"
+      "icon": "src/assets/icon.ico"
     },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "icon": "assets/icon.icns"
-    },
-    "portable": {
-      "artifactName": "${productName}-portable.${ext}"
+    "msi": {
+      "oneClick": false,
+      "perMachine": true,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Screen Explain"
     }
   },
   "dependencies": {

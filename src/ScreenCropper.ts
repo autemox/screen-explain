@@ -7,7 +7,7 @@ import * as fs from 'fs';
 export class ScreenCropper {
     main: Main;
     captureWindow: BrowserWindow | null = null;
-    private resolveCapture: ((value: CapturedImage) => void) | null = null;
+    private resolveCapture: ((value: CapturedImage|null) => void) | null = null;
 
     constructor(main: Main) {
         this.main = main;
@@ -31,9 +31,21 @@ export class ScreenCropper {
                 this.resolveCapture = null;
             }
         });
+
+        ipcMain.on('selection-cancelled', () => {
+            if (this.captureWindow) {
+                this.captureWindow.close();
+                this.captureWindow = null;
+            }
+            
+            if (this.resolveCapture) {
+                this.resolveCapture(null);
+                this.resolveCapture = null;
+            }
+        });
     }
 
-    public async initializeScreenCapture(screenshotData: string): Promise<CapturedImage> {
+    public async initializeScreenCapture(screenshotData: string): Promise<CapturedImage|null> {
         return new Promise((resolve) => {
             this.resolveCapture = resolve;
             this.showCropWindow(screenshotData);

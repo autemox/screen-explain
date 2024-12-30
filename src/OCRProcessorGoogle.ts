@@ -31,7 +31,7 @@ export class OCRProcessorGoogle {
                 const defaultConfig = {
                     private_key: '',
                     client_email: '',
-                    customPrompt: 'Tell me about: ',
+                    customPrompt: "Tell me about the following, first a short summary (do not label it 'summary' or at all) then go into great detail (do not label it 'more details' or at all) with section headers: ",
                 };
                 fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 4));
                 return defaultConfig;

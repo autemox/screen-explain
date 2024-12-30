@@ -18,8 +18,9 @@ Cross-platform support (Windows & Mac)
 ### Building the Application
 
 From your cmd.exe prompt, in the project folder, type:
-npm start             # Runs the application from cmd prompt
-npm run package       # Creates executables for current platform
+npm start                  # Runs the application from cmd prompt
+npm run package-win-msi    # Creates msi executables for windows (or use -nsis, -portable, -all)
+npm run package-mac        # Creates executables for mac
 
 ## Application Architecture
 
@@ -40,7 +41,8 @@ The application follows a modular architecture where each class handles a specif
    - **ExplanationWindow**: Displays the AI-generated explanation
 
 ## Future Ideas
-1. Image recognition and discussion
+1. Add text to individual queries, after pressing CTRL+L but before drawing your green box
+2. Image recognition and discussion
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.

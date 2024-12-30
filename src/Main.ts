@@ -81,6 +81,12 @@ export class Main {
 
           // Get cropped image from screenshot
           const croppedImage = await this.screenCropper.initializeScreenCapture(screenshotData);
+          if(!croppedImage) {
+            console.log("No cropped image, restarting sequence...");
+            this.screenCropper.cleanup();
+            this.awaitSequence();
+            return;
+          }
           console.log("3. Got cropped image");
           
           // Process with OCR
@@ -175,15 +181,19 @@ export class Main {
     }
 
     private createMainWindow(apiKey:string): void {
-        this.mainWindow = new BrowserWindow({
-            width: 800,
-            height: 600,
-            autoHideMenuBar: true,  // Hide the menu bar
-            webPreferences: {
-                nodeIntegration: true,
-                contextIsolation: false
-            }
-        });
+      const launchedAtStartup = process.argv.includes('--launched-at-startup') || 
+                               app.getLoginItemSettings().wasOpenedAtLogin;
+      
+      this.mainWindow = new BrowserWindow({
+          width: 800,
+          height: 600,
+          autoHideMenuBar: true,
+          show: !launchedAtStartup, 
+          webPreferences: {
+              nodeIntegration: true,
+              contextIsolation: false
+          }
+      });
 
         this.mainWindow.loadFile('src/html/index.html').then(() => {
           // Load the saved API key and send it to the renderer process
@@ -200,10 +210,36 @@ export class Main {
         }
         return true;
       });
-    }
 
+      ipcMain.on('get-login-item-settings', (event) => {
+        const settings = app.getLoginItemSettings();
+        event.returnValue = settings.openAtLogin;
+      });
+        
+      ipcMain.on('set-login-item-settings', (_, enabled) => {
+        if (process.env.NODE_ENV === 'development') {
+            app.setLoginItemSettings({
+                openAtLogin: enabled,
+                openAsHidden: true,
+                path: process.execPath,
+                args: [app.getAppPath(), '--launched-at-startup'] 
+            });
+        } else {
+            app.setLoginItemSettings({
+                openAtLogin: enabled,
+                openAsHidden: true,
+                path: app.getPath('exe'),
+                args: ['--launched-at-startup']
+            });
+        }
+      });
+    }
     private createTray(): void {
-      this.tray = new Tray('src/assets/icon.png'); // You'll need an icon file
+      const iconPath = app.isPackaged 
+        ? path.join(process.resourcesPath, 'assets/icon.png')
+        : path.join(__dirname, '../assets/icon.png');
+      this.tray = new Tray(iconPath);
+     
       const contextMenu = Menu.buildFromTemplate([
           { 
               label: 'Show App', 

@@ -75,6 +75,14 @@
             cursorBox.style.top = e.clientY + 'px';
         });
 
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Cancel the selection process
+                ipcRenderer.send('selection-cancelled');
+                cursorBox.style.display = 'block';
+            }
+        });
+
         ipcRenderer.on('screenshot-taken', (event, data) => {
             screenshot.src = data.thumbnail;
             overlay.style.display = 'block';

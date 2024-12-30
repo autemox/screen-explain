@@ -92,6 +92,12 @@
             background-color: #e8f4ff;
             text-decoration: underline;
         }
+        .settings-section {
+            margin-bottom: 24px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -104,6 +110,13 @@
             <label for="apiKey">Your OpenAI API Key:</label>
             <input type="text" id="apiKey" class="api-input" placeholder="sk-..." />
             <div id="keyStatus" class="key-status"></div>
+        </div>
+
+        <div class="settings-section">
+            <label>
+                <input type="checkbox" id="startAtLogin" />
+                Automatically Open in System Tray at Windows Startup
+            </label>
         </div>
 
         <div class="instructions">
@@ -134,6 +147,16 @@
         const keyStatus = document.getElementById('keyStatus');
         const editConfigLink = document.getElementById('editConfig');
         let saveTimeout;
+
+        const startAtLoginCheckbox = document.getElementById('startAtLogin');
+
+        // Get initial state
+        startAtLoginCheckbox.checked = ipcRenderer.sendSync('get-login-item-settings');
+
+        // Handle changes
+        startAtLoginCheckbox.addEventListener('change', (e) => {
+            ipcRenderer.send('set-login-item-settings', e.target.checked);
+        });
 
         // Load saved API key
         window.addEventListener('load', async () => {
