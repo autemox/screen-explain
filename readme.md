@@ -18,8 +18,11 @@ Cross-platform support (Windows & Mac)
 ### Building the Application
 
 From your cmd.exe prompt, in the project folder, type:
+
 npm start                  # Runs the application from cmd prompt
+
 npm run package-win-msi    # Creates msi executables for windows (or use -nsis, -portable, -all)
+
 npm run package-mac        # Creates executables for mac
 
 ## Application Architecture
