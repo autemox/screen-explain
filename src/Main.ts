@@ -25,6 +25,7 @@ export class Main {
     public googleEmail: string;
     private tray: Tray | null = null;
     private isQuitting: boolean = false;
+    public temporaryCustomPrompt = '';
 
     constructor() {
       this.googleEmail='autemox@gmail.com';
@@ -83,6 +84,7 @@ export class Main {
           const croppedImage = await this.screenCropper.initializeScreenCapture(screenshotData);
           if(!croppedImage) {
             console.log("No cropped image, restarting sequence...");
+            this.temporaryCustomPrompt='';
             this.screenCropper.cleanup();
             this.awaitSequence();
             return;
@@ -115,11 +117,13 @@ export class Main {
 
           // Get explanation from OpenAI
           console.log("7. Starting OpenAI query with prompt: ", customPrompt);
-          const query = `${customPrompt}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it)`;
+          const promptToUse = this.temporaryCustomPrompt !='' ? this.temporaryCustomPrompt : customPrompt;
+          const query = `${promptToUse}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it)`;
           await this.explanationWindow.intializeExplanationWindow(this.openAiApiKey, query);
-
+          
           // Cleanup
           console.log("12. Starting cleanup...");
+          this.temporaryCustomPrompt='';
           this.processWindow.cleanup();
           this.screenCropper.cleanup();
           console.log("13. Cleanup complete");

@@ -43,6 +43,13 @@ export class ScreenCropper {
                 this.resolveCapture = null;
             }
         });
+
+        // Add listener for text input
+        ipcMain.on('text-input', (event, text: string) => {
+            if (this.main) {
+                this.main.temporaryCustomPrompt = text;
+            }
+        });
     }
 
     public async initializeScreenCapture(screenshotData: string): Promise<CapturedImage|null> {
@@ -83,6 +90,9 @@ export class ScreenCropper {
                 this.captureWindow.webContents.send('screenshot-taken', {
                     thumbnail: screenshotData
                 });
+
+                // Enable key capture for the window
+                this.captureWindow.webContents.send('enable-text-input');
             }
         });
     }

@@ -15,6 +15,8 @@ This can be useful for quickly looking up anything, especially if the text is in
 
 Cross-platform support (Windows & Mac)
 
+Customize your prompts: permanently by modifying the configuration file, or temporarily by typing your prompt onto the darkened screen (after presing CTRL+L)
+
 ### Building the Application
 
 From your cmd.exe prompt, in the project folder, type:

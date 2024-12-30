@@ -49,6 +49,23 @@
             transform: translate(0%, 0%);
             z-index: 1000;
         }
+        #text-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            white-space: pre-wrap;
+            max-width: 80%;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -57,17 +74,20 @@
         <div id="selection-box"></div>
     </div>
     <div id="cursor-box"></div>
+    <div id="text-display"></div>
     <script>
         const { ipcRenderer } = require('electron');
         
         let isSelecting = false;
         let startX = 0;
         let startY = 0;
+        let currentText = '';
         
         const screenshot = document.getElementById('screenshot');
         const overlay = document.getElementById('selection-overlay');
         const selectionBox = document.getElementById('selection-box');
         const cursorBox = document.getElementById('cursor-box');
+        const textDisplay = document.getElementById('text-display');
         
         // Update cursor box position
         document.addEventListener('mousemove', (e) => {
@@ -75,17 +95,35 @@
             cursorBox.style.top = e.clientY + 'px';
         });
 
+        // Handle keyboard input
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 // Cancel the selection process
                 ipcRenderer.send('selection-cancelled');
                 cursorBox.style.display = 'block';
+                return;
             }
+
+            // Handle text input
+            if (e.key === 'Backspace') {
+                currentText = currentText.slice(0, -1);
+            } else if (e.key === 'Enter') {
+                currentText += '\n';
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                currentText += e.key;
+            }
+
+            // Update display and send to main process
+            textDisplay.textContent = currentText;
+            ipcRenderer.send('text-input', currentText);
         });
 
         ipcRenderer.on('screenshot-taken', (event, data) => {
             screenshot.src = data.thumbnail;
             overlay.style.display = 'block';
+            // Reset text when window is opened
+            currentText = '';
+            textDisplay.textContent = '';
         });
 
         overlay.addEventListener('mousedown', (e) => {
