@@ -16,6 +16,15 @@ export class ScreenCropper {
 
     private setupIpcListeners(): void {
         ipcMain.on('area-selected', (event, data: CapturedImage) => {
+            // Check if the selection is at least 20x20 pixels
+            if (data.bounds.width < 20 || data.bounds.height < 20) {
+                // Ignore the selection - you might want to notify the user
+                if (this.captureWindow) {
+                    this.captureWindow.webContents.send('selection-too-small');
+                }
+                return;
+            }
+    
             // Ensure the image data is properly formatted
             if (!data.imageData.startsWith('data:image/png;base64,')) {
                 data.imageData = `data:image/png;base64,${data.imageData}`;

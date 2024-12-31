@@ -17,6 +17,13 @@
             max-width: 800px;
             margin: 0 auto;
         }
+        .container2 {
+            text-align: right;
+            max-width: 800px;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 0 auto;
+        }
         h2 {
             color: #2c3e50;
             margin-bottom: 20px;
@@ -25,9 +32,26 @@
             line-height: 1.6;
             white-space: pre-wrap;
         }
+        .continue-chat-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .continue-chat-button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
+    <div class="container2">
+        <button class="continue-chat-button" id="continue-in-chatgpt">
+            Copy Text for ChatGPT
+        </button>
+    </div>
     <div class="container">
         <div id="explanation-text"></div>
     </div>
@@ -45,6 +69,13 @@
             if (event.key === 'Escape') {
                 ipcRenderer.send('close-explanation-window');
             }
+        });
+
+        const continueButton = document.getElementById('continue-in-chatgpt');
+        continueButton.addEventListener('click', () => {
+            const explanationText = document.getElementById('explanation-text').textContent;
+            ipcRenderer.send('continue-in-chatgpt', explanationText);
+            ipcRenderer.send('close-explanation-window');
         });
     </script>
 </body>

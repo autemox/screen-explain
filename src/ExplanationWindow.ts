@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, ipcMain } from 'electron';
+import { BrowserWindow, screen, ipcMain, shell } from 'electron';
 import { Main } from './Main';
 import { OpenAiSimpleStream } from './OpenAiSimpleStream';
 

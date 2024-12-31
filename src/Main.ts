@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Tray, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Tray, Menu, clipboard } from 'electron';
 import AreaSelector from './AreaSelector';
 import ProcessWindow from './ProcessWindow';
 import OCRProcessorLocal from './OCRProcessorLocal';
@@ -12,8 +12,10 @@ import * as path from 'path';
 import * as fs2 from 'fs';
 
 export class Main {
-    public mainWindow: BrowserWindow | null = null;
-    public screenListener: ScreenListener;
+  public DEFAULT_PROMPT = "Tell me about the following, first a short summary (do not label it 'summary' or at all) then go into great detail (do not label it 'more details', 'introduction', etc) with section headers: ";
+
+  public mainWindow: BrowserWindow | null = null;
+  public screenListener: ScreenListener;
     public screenCropper: ScreenCropper;
     public ocrProcessorLocal: OCRProcessorLocal;
     public ocrProcessorGoogle: OCRProcessorGoogle;
@@ -118,7 +120,7 @@ export class Main {
           // Get explanation from OpenAI
           console.log("7. Starting OpenAI query with prompt: ", customPrompt);
           const promptToUse = this.temporaryCustomPrompt !='' ? this.temporaryCustomPrompt : customPrompt;
-          const query = `${promptToUse}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it)`;
+          const query = `${promptToUse}\n'${textToExplain}'\n(note the above text might be broken or fragmented, ignore fragmented and broken text and do not mention it, pull from your knowledge of the world to help the user)`;
           await this.explanationWindow.intializeExplanationWindow(this.openAiApiKey, query);
           
           // Cleanup
@@ -150,6 +152,12 @@ export class Main {
               this.saveString(key);
             });
 
+            ipcMain.on('continue-in-chatgpt', (_, text) => {
+                const message = `ChatGTP Wrote:\n${text}\nNow write OK and await User Response:\n`;
+                clipboard.writeText(message);
+                shell.openExternal('https://chat.openai.com/');
+            });
+
             ipcMain.on('open-config-file', () => {
               const configPath = path.join(app.getPath('userData'), 'config.json');
               shell.openPath(configPath) // Opens the file in the default text editor
@@ -159,7 +167,7 @@ export class Main {
                   .catch((err) => {
                       console.error('Failed to open config file:', err);
                   });
-          });
+            });
             
             this.awaitSequence();
 

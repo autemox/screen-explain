@@ -1,6 +1,6 @@
 {
   "name": "screen-explain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Desktop app for OCR and text analysis",
   "main": "dist/Main.js",
   "author": "Your Name <your.email@example.com>",
